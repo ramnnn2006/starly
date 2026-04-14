@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "VIT Feedback Filler",
+  "version": "1.0",
+  "description": "Automatically fills VIT VTOP end-semester feedback star ratings with safe batch mode. You always control the final submit.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.vit.ac.in/*",
+    "http://*.vit.ac.in/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.vit.ac.in/*",
+        "http://*.vit.ac.in/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
