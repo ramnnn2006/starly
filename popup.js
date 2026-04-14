@@ -218,7 +218,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function restoreCommentUI(comment, customNote) {
-    if (comment === "__custom__" || (comment && !["", "Good", "Excellent", "Very Good", "Satisfactory"].includes(comment))) {
+    const presetValues = Array.from(commentBadges)
+      .map(b => b.dataset.c)
+      .filter(v => v !== "__custom__");
+    const isPreset = presetValues.includes(comment);
+    if (!isPreset && comment !== "") {
       commentBadges.forEach(b => b.classList.toggle("active", b.dataset.c === "__custom__"));
       noteArea.value = customNote || comment;
       noteArea.classList.add("show");
