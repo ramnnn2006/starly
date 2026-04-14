@@ -3,58 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VIT Feedback Filler</title>
+  <title>VTOP Feedback Filler</title>
   <style>
-    /* ── Reset & base ───────────────────────────────────── */
+    /* ── Reset ──────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black:   #000000;
-      --yellow:  #FFDD00;
-      --cream:   #FFFBE6;
-      --white:   #FFFFFF;
-      --green:   #00CC44;
-      --red:     #FF3333;
-      --blue:    #1A6EFF;
-      --shadow:  4px 4px 0 var(--black);
-      --shadow-s: 2px 2px 0 var(--black);
+      --ink:      #000000;
+      --accent:   #FFDD00;
+      --bg-base:  #FFFBE6;
+      --bg-card:  #FFFFFF;
+      --ok:       #00CC44;
+      --danger:   #FF3333;
+      --info:     #1A6EFF;
+      --drop-lg:  4px 4px 0 var(--ink);
+      --drop-sm:  2px 2px 0 var(--ink);
     }
 
     body {
       width: 320px;
-      background: var(--cream);
+      background: var(--bg-base);
       font-family: 'Courier New', Courier, monospace;
-      color: var(--black);
-      border: 3px solid var(--black);
+      color: var(--ink);
+      border: 3px solid var(--ink);
     }
 
-    /* ── Header ─────────────────────────────────────────── */
-    .header {
-      background: var(--yellow);
-      border-bottom: 3px solid var(--black);
+    /* ── Top bar ────────────────────────────────────────── */
+    .top-bar {
+      background: var(--accent);
+      border-bottom: 3px solid var(--ink);
       padding: 12px 14px 10px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    .header-icon { font-size: 24px; flex-shrink: 0; }
-    .header-text { flex: 1; }
-    .header-title {
+    .brand-icon { font-size: 24px; flex-shrink: 0; }
+    .brand-text { flex: 1; }
+    .brand-title {
       font-size: 15px;
       font-weight: 900;
       letter-spacing: -0.3px;
       line-height: 1;
     }
-    .header-sub {
+    .brand-sub {
       font-size: 10px;
       color: #444;
       margin-top: 2px;
       font-weight: 700;
     }
-    .scan-btn {
-      background: var(--black);
-      color: var(--yellow);
-      border: 2px solid var(--black);
+    .rescan-btn {
+      background: var(--ink);
+      color: var(--accent);
+      border: 2px solid var(--ink);
       padding: 5px 10px;
       font-family: inherit;
       font-size: 11px;
@@ -62,14 +62,14 @@
       cursor: pointer;
       letter-spacing: 0.5px;
       transition: transform 0.1s, box-shadow 0.1s;
-      box-shadow: var(--shadow-s);
+      box-shadow: var(--drop-sm);
     }
-    .scan-btn:hover  { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 #555; }
-    .scan-btn:active { transform: translate(2px,2px);   box-shadow: none; }
+    .rescan-btn:hover  { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 #555; }
+    .rescan-btn:active { transform: translate(2px,2px);   box-shadow: none; }
 
-    /* ── Status pill ─────────────────────────────────────── */
-    .pill {
-      border-bottom: 3px solid var(--black);
+    /* ── Status strip ───────────────────────────────────── */
+    .status-strip {
+      border-bottom: 3px solid var(--ink);
       padding: 7px 14px;
       font-size: 11px;
       font-weight: 700;
@@ -77,49 +77,33 @@
       align-items: center;
       gap: 6px;
     }
-    .pill-dot {
+    .strip-dot {
       width: 8px; height: 8px;
       border-radius: 50%;
-      border: 1.5px solid var(--black);
+      border: 1.5px solid var(--ink);
       flex-shrink: 0;
     }
-    .pill.grey   { background: #e5e5e5; }
-    .pill.yellow { background: #fff9cc; }
-    .pill.green  { background: #d4f5d4; }
-    .pill.blue   { background: #d0e8ff; }
-    .pill.red    { background: #ffe0e0; }
+    .status-strip.s-grey   { background: #e5e5e5; }
+    .status-strip.s-yellow { background: #fff9cc; }
+    .status-strip.s-green  { background: #d4f5d4; }
+    .status-strip.s-blue   { background: #d0e8ff; }
+    .status-strip.s-red    { background: #ffe0e0; }
     .dot-grey   { background: #aaa; }
     .dot-yellow { background: #ccaa00; }
-    .dot-green  { background: var(--green); }
-    .dot-blue   { background: var(--blue); }
-    .dot-red    { background: var(--red); }
+    .dot-green  { background: var(--ok); }
+    .dot-blue   { background: var(--info); }
+    .dot-red    { background: var(--danger); }
 
-    /* ── Stats row ───────────────────────────────────────── */
-    .stats {
-      display: flex;
-      border-bottom: 3px solid var(--black);
-    }
-    .stat-cell {
-      flex: 1;
-      padding: 8px 6px;
-      text-align: center;
-      border-right: 2px solid var(--black);
-      background: var(--white);
-    }
-    .stat-cell:last-child { border-right: none; }
-    .stat-val { font-size: 18px; font-weight: 900; line-height: 1; }
-    .stat-lbl { font-size: 9px; color: #555; margin-top: 2px; font-weight: 700; }
+    /* ── Controls area ──────────────────────────────────── */
+    .controls { padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; }
 
-    /* ── Section body ────────────────────────────────────── */
-    .body { padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; }
-
-    /* ── Expandable rows ─────────────────────────────────── */
-    .expand-row {
-      border: 2px solid var(--black);
-      box-shadow: var(--shadow-s);
-      background: var(--white);
+    /* ── Setting blocks (expandable) ────────────────────── */
+    .setting-block {
+      border: 2px solid var(--ink);
+      box-shadow: var(--drop-sm);
+      background: var(--bg-card);
     }
-    .expand-head {
+    .setting-toggle {
       display: flex;
       align-items: center;
       padding: 9px 12px;
@@ -129,129 +113,145 @@
       font-size: 12px;
       letter-spacing: 0.3px;
     }
-    .expand-head:hover { background: #f5f5f5; }
-    .expand-label { flex: 1; }
-    .expand-val {
+    .setting-toggle:hover { background: #f5f5f5; }
+    .setting-label { flex: 1; }
+    .setting-badge {
       font-size: 10px;
       font-weight: 700;
       color: #555;
-      background: var(--cream);
+      background: var(--bg-base);
       border: 1.5px solid #ccc;
       padding: 2px 8px;
       margin-right: 8px;
     }
-    .expand-chevron { font-size: 14px; line-height: 1; }
-    .expand-panel {
-      border-top: 2px solid var(--black);
+    .toggle-arrow { font-size: 14px; line-height: 1; }
+    .setting-drawer {
+      border-top: 2px solid var(--ink);
       padding: 10px 12px;
       display: none;
-      background: var(--cream);
+      background: var(--bg-base);
     }
-    .expand-panel.open { display: block; }
+    .setting-drawer.open { display: block; }
 
-    /* ── Star chips ──────────────────────────────────────── */
-    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
-    .chip {
-      border: 2px solid var(--black);
-      box-shadow: var(--shadow-s);
+    /* ── Badges (star/comment chips) ────────────────────── */
+    .badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge {
+      border: 2px solid var(--ink);
+      box-shadow: var(--drop-sm);
       padding: 5px 10px;
       font-size: 11px;
       font-weight: 900;
       cursor: pointer;
-      background: var(--white);
+      background: var(--bg-card);
       font-family: inherit;
       transition: transform 0.1s, box-shadow 0.1s;
       letter-spacing: 0.3px;
     }
-    .chip:hover  { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 #000; }
-    .chip:active { transform: translate(2px,2px);   box-shadow: none; }
-    .chip.active {
-      background: var(--yellow);
-      box-shadow: var(--shadow-s);
+    .badge:hover  { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 #000; }
+    .badge:active { transform: translate(2px,2px);   box-shadow: none; }
+    .badge.active {
+      background: var(--accent);
+      box-shadow: var(--drop-sm);
     }
 
-    /* ── Textarea ─────────────────────────────────────────── */
-    .custom-ta {
+    /* ── Note textarea ──────────────────────────────────── */
+    .note-input {
       width: 100%;
-      border: 2px solid var(--black);
+      border: 2px solid var(--ink);
       padding: 8px;
       font-family: inherit;
       font-size: 11px;
       resize: vertical;
       min-height: 60px;
       margin-top: 8px;
-      background: var(--white);
+      background: var(--bg-card);
       display: none;
     }
-    .custom-ta.show { display: block; }
-    .char-hint { font-size: 9px; color: #888; text-align: right; margin-top: 3px; }
+    .note-input.show { display: block; }
+    .char-counter { font-size: 9px; color: #888; text-align: right; margin-top: 3px; }
 
-    /* ── Action buttons ──────────────────────────────────── */
-    .btn-row { display: flex; gap: 8px; }
-    .action-btn {
+    /* ── Action buttons ─────────────────────────────────── */
+    .action-row { display: flex; gap: 8px; }
+    .run-btn {
       flex: 1; padding: 11px 8px;
-      border: 2px solid var(--black);
-      box-shadow: var(--shadow);
+      border: 2px solid var(--ink);
+      box-shadow: var(--drop-lg);
       font-family: inherit;
       font-size: 12px;
       font-weight: 900;
       cursor: pointer;
       letter-spacing: 0.5px;
-      background: var(--white);
+      background: var(--bg-card);
       transition: transform 0.1s, box-shadow 0.1s;
       text-align: center;
     }
-    .action-btn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 #000; }
-    .action-btn:active { transform: translate(4px,4px);   box-shadow: none; }
-    .action-btn:disabled {
+    .run-btn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 #000; }
+    .run-btn:active { transform: translate(4px,4px);   box-shadow: none; }
+    .run-btn:disabled {
       opacity: 0.45; cursor: not-allowed;
-      transform: none !important; box-shadow: var(--shadow) !important;
+      transform: none !important; box-shadow: var(--drop-lg) !important;
     }
-    .action-btn.primary { background: var(--yellow); }
-    .action-btn.green-btn { background: var(--green); color: var(--white); }
+    .run-btn.primary { background: var(--accent); }
+    .run-btn.go-btn  { background: var(--ok); color: var(--bg-card); }
 
-    /* ── Loader ───────────────────────────────────────────── */
-    .loader {
+    /* ── Busy bar ───────────────────────────────────────── */
+    .busy-bar {
       display: none;
       align-items: center;
       gap: 8px;
       padding: 8px 12px;
-      background: var(--white);
-      border: 2px solid var(--black);
-      box-shadow: var(--shadow-s);
+      background: var(--bg-card);
+      border: 2px solid var(--ink);
+      box-shadow: var(--drop-sm);
       font-size: 11px;
       font-weight: 700;
     }
-    .loader.show { display: flex; }
-    .spinner {
+    .busy-bar.show { display: flex; }
+    .spin-ring {
       width: 14px; height: 14px;
-      border: 2px solid var(--black);
-      border-top-color: var(--yellow);
+      border: 2px solid var(--ink);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Status box ───────────────────────────────────────── */
-    .status-box {
+    /* ── Message box ────────────────────────────────────── */
+    .msg-box {
       display: none;
       padding: 10px 12px;
-      border: 2px solid var(--black);
-      box-shadow: var(--shadow-s);
+      border: 2px solid var(--ink);
+      box-shadow: var(--drop-sm);
       font-size: 11px;
       font-weight: 700;
       white-space: pre-wrap;
       line-height: 1.5;
     }
-    .status-box.show { display: block; }
-    .status-box.ok   { background: #d4f5d4; }
-    .status-box.warn { background: #fff3cd; }
-    .status-box.err  { background: #ffe0e0; }
+    .msg-box.show      { display: block; }
+    .msg-box.ok        { background: #d4f5d4; }
+    .msg-box.warn      { background: #fff3cd; }
+    .msg-box.err       { background: #ffe0e0; }
 
-    /* ── Footer ───────────────────────────────────────────── */
-    .footer {
-      border-top: 3px solid var(--black);
+    /* ── Summary row ────────────────────────────────────── */
+    .summary-row {
+      display: flex;
+      border-top: 3px solid var(--ink);
+    }
+    .summary-cell {
+      flex: 1;
+      padding: 8px 6px;
+      text-align: center;
+      border-right: 2px solid var(--ink);
+      background: var(--bg-card);
+    }
+    .summary-cell:last-child { border-right: none; }
+    .cell-val { font-size: 18px; font-weight: 900; line-height: 1; }
+    .cell-lbl { font-size: 9px; color: #555; margin-top: 2px; font-weight: 700; }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    .foot-note {
+      border-top: 3px solid var(--ink);
       padding: 6px 14px;
       font-size: 9px;
       color: #777;
@@ -264,104 +264,105 @@
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-icon">⭐</div>
-    <div class="header-text">
-      <div class="header-title">VIT FEEDBACK FILLER</div>
-      <div class="header-sub">VTOP End-Semester · Never Auto-Submits</div>
+  <!-- Top bar -->
+  <header class="top-bar">
+    <div class="brand-icon">⭐</div>
+    <div class="brand-text">
+      <div class="brand-title">VTOP FEEDBACK FILLER</div>
+      <div class="brand-sub">End-Semester · Never Auto-Submits</div>
     </div>
-    <button class="scan-btn" id="scanBtn" title="Re-scan page">↺ SCAN</button>
+    <button class="rescan-btn" id="scanBtn" title="Re-scan page">↺ SCAN</button>
   </header>
 
-  <!-- Status pill -->
-  <div class="pill grey" id="pill">
-    <div class="pill-dot dot-grey" id="pillDot"></div>
+  <!-- Status strip -->
+  <div class="status-strip s-grey" id="pill">
+    <div class="strip-dot dot-grey" id="pillDot"></div>
     <span id="pillText">Scanning page…</span>
   </div>
 
-  <!-- Quick stats -->
-  <div class="stats">
-    <div class="stat-cell">
-      <div class="stat-val" id="statQ">—</div>
-      <div class="stat-lbl">QUESTIONS</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-val" id="statR">—</div>
-      <div class="stat-lbl">RATING</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-val" id="statP">—</div>
-      <div class="stat-lbl">PENDING</div>
-    </div>
-  </div>
-
-  <!-- Main body -->
-  <div class="body">
+  <!-- Controls -->
+  <div class="controls">
 
     <!-- Rating selector -->
-    <div class="expand-row">
-      <div class="expand-head" id="ratingHead">
-        <span class="expand-label">⭐ STAR RATING</span>
-        <span class="expand-val" id="ratingVal">5 Stars</span>
-        <span class="expand-chevron" id="ratingChev">›</span>
+    <div class="setting-block">
+      <div class="setting-toggle" id="ratingHead">
+        <span class="setting-label">⭐ STAR RATING</span>
+        <span class="setting-badge" id="ratingVal">3 Stars</span>
+        <span class="toggle-arrow" id="ratingChev">›</span>
       </div>
-      <div class="expand-panel" id="ratingPanel">
-        <div class="chip-row">
-          <button class="chip" data-v="1">1★</button>
-          <button class="chip" data-v="2">2★★</button>
-          <button class="chip" data-v="3">3★★★</button>
-          <button class="chip" data-v="4">4★★★★</button>
-          <button class="chip active" data-v="5">5★★★★★</button>
+      <div class="setting-drawer" id="ratingPanel">
+        <div class="badge-row">
+          <button class="badge" data-v="1">1★</button>
+          <button class="badge" data-v="2">2★★</button>
+          <button class="badge active" data-v="3">3★★★</button>
+          <button class="badge" data-v="4">4★★★★</button>
+          <button class="badge" data-v="5">5★★★★★</button>
         </div>
       </div>
     </div>
 
     <!-- Comment selector -->
-    <div class="expand-row">
-      <div class="expand-head" id="commentHead">
-        <span class="expand-label">💬 COMMENT</span>
-        <span class="expand-val" id="commentVal">None</span>
-        <span class="expand-chevron" id="commentChev">›</span>
+    <div class="setting-block">
+      <div class="setting-toggle" id="commentHead">
+        <span class="setting-label">💬 COMMENT</span>
+        <span class="setting-badge" id="commentVal">None</span>
+        <span class="toggle-arrow" id="commentChev">›</span>
       </div>
-      <div class="expand-panel" id="commentPanel">
-        <div class="chip-row">
-          <button class="chip active" data-c="">None</button>
-          <button class="chip" data-c="Good">Good</button>
-          <button class="chip" data-c="Excellent">Excellent</button>
-          <button class="chip" data-c="Very Good">Very Good</button>
-          <button class="chip" data-c="Satisfactory">Satisfactory</button>
-          <button class="chip" data-c="__custom__">Custom…</button>
+      <div class="setting-drawer" id="commentPanel">
+        <div class="badge-row">
+          <button class="badge active" data-c="">None</button>
+          <button class="badge" data-c="Good">Good</button>
+          <button class="badge" data-c="Excellent">Excellent</button>
+          <button class="badge" data-c="Very Good">Very Good</button>
+          <button class="badge" data-c="Satisfactory">Satisfactory</button>
+          <button class="badge" data-c="__custom__">Custom…</button>
         </div>
-        <textarea class="custom-ta" id="customTa" maxlength="250" placeholder="Type your comment here…"></textarea>
-        <div class="char-hint" id="charHint">0 / 250</div>
+        <textarea class="note-input" id="customTa" maxlength="250" placeholder="Type your comment here…"></textarea>
+        <div class="char-counter" id="charHint">0 / 250</div>
       </div>
-    </div>
-
-    <!-- Loader -->
-    <div class="loader" id="loader">
-      <div class="spinner"></div>
-      <span id="loaderText">Working…</span>
-    </div>
-
-    <!-- Status message -->
-    <div class="status-box" id="statusBox">
-      <span id="statusText"></span>
     </div>
 
     <!-- Action buttons -->
-    <div class="btn-row">
-      <button class="action-btn primary" id="fillBtn">⚡ AUTO-FILL</button>
-      <button class="action-btn" id="batchBtn">🚀 BATCH FILL</button>
+    <div class="action-row">
+      <button class="run-btn primary" id="fillBtn">⚡ AUTO-FILL</button>
+      <button class="run-btn" id="batchBtn">🚀 BATCH FILL</button>
+    </div>
+
+    <!-- Busy indicator -->
+    <div class="busy-bar" id="loader">
+      <div class="spin-ring"></div>
+      <span id="loaderText">Working…</span>
+    </div>
+
+    <!-- Result message -->
+    <div class="msg-box" id="statusBox">
+      <span id="statusText"></span>
     </div>
 
   </div>
 
+  <!-- Summary row -->
+  <div class="summary-row">
+    <div class="summary-cell">
+      <div class="cell-val" id="statQ">—</div>
+      <div class="cell-lbl">QUESTIONS</div>
+    </div>
+    <div class="summary-cell">
+      <div class="cell-val" id="statR">—</div>
+      <div class="cell-lbl">RATING</div>
+    </div>
+    <div class="summary-cell">
+      <div class="cell-val" id="statP">—</div>
+      <div class="cell-lbl">PENDING</div>
+    </div>
+  </div>
+
   <!-- Footer -->
-  <footer class="footer">
+  <footer class="foot-note">
     YOU CONTROL THE FINAL SUBMIT · FEEDBACK AFFECTS FFCS REGISTRATION
   </footer>
 
   <script src="popup.js"></script>
 </body>
 </html>
+

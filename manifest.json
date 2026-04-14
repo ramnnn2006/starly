@@ -5,7 +5,8 @@
   "description": "Automatically fills VIT VTOP end-semester feedback star ratings with safe batch mode. You always control the final submit.",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "https://*.vit.ac.in/*",
