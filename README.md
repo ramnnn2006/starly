@@ -1,55 +1,87 @@
-# VIT Feedback Filler — Chrome Extension
+<div align="center">
 
-> Automatically fills VIT VTOP end-semester feedback star ratings with safe batch mode.
-> You always control the final Submit click — the extension never submits on your behalf.
+# ⭐ VIT Feedback Filler
+
+### The fastest way to get through VTOP end-semester feedback — without losing control of a single submission.
+
+[![Version](https://img.shields.io/badge/version-1.0-FFDD00?style=for-the-badge&labelColor=000000)](https://github.com/ramnnn2006/feedbackautomation/releases)
+[![Manifest](https://img.shields.io/badge/Manifest-V3-00CC44?style=for-the-badge&labelColor=000000)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+[![Platform](https://img.shields.io/badge/Platform-Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white&labelColor=000000)](https://chrome.google.com/webstore)
+[![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge&labelColor=000000)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge&labelColor=000000)](https://github.com/ramnnn2006/feedbackautomation/pulls)
+
+</div>
 
 ---
 
-## Features
+## 🧠 What is this?
 
-- ⭐ **Star fill** — choose 1–5 stars and fill every rating question in one click
-- 💬 **Comment presets** — pick a preset (Good, Excellent, Very Good…) or type a custom comment
-- 🚀 **Safe Batch Mode** — navigates each pending course, fills the form, plays a chime, shows a review overlay, then waits for you to manually submit before proceeding
-- 🔒 **Never auto-submits** — you always review and click Submit yourself
-- 🎨 **Neobrutalism UI** — bold, high-contrast, minimal design
+**VIT Feedback Filler** is a Chrome extension for VIT students that automatically fills VTOP end-semester feedback forms with your chosen star rating and optional comment — one course at a time or all at once via Batch Mode.
+
+> 🔒 **You always click Submit yourself. The extension never submits on your behalf.**
+
+Built with a clean [Neobrutalism](https://hype4.academy/articles/design/neubrutalism-is-taking-over-web) UI — bold borders, high contrast, zero fluff.
 
 ---
 
-## Installation
+## ✨ Features
 
-1. Clone or download this repository
-2. Open Chrome and navigate to `chrome://extensions`
-3. Enable **Developer mode** (toggle in the top-right corner)
+| Feature | Description |
+|---|---|
+| ⭐ **Star Fill** | Choose 1–5 stars and instantly fill every rating question on the page |
+| 💬 **Comment Presets** | Pick Good / Excellent / Very Good / Satisfactory or write a fully custom comment |
+| 🚀 **Safe Batch Mode** | Auto-navigates each pending course, fills the form, plays a chime, then pauses for your manual Submit |
+| 🔔 **Chime + Overlay** | Audio cue and review overlay appear before every submission so you never miss a step |
+| 🔒 **Zero Auto-Submit** | Submission is always in your hands — the extension will never click Submit |
+| 📊 **Live Stats** | Popup shows question count, current rating, and pending course count in real time |
+| 🎨 **Neobrutalism UI** | Bold, high-contrast, monospace design — looks great, works better |
+
+---
+
+## 🚀 Installation
+
+> No Chrome Web Store listing yet — load it manually in under a minute.
+
+1. **Clone or download** this repository
+   ```bash
+   git clone https://github.com/ramnnn2006/feedbackautomation.git
+   ```
+2. Open Chrome and go to **`chrome://extensions`**
+3. Toggle **Developer mode** on (top-right corner)
 4. Click **Load unpacked**
-5. Select the repository folder (where `manifest.json` lives)
-6. The **VIT Feedback Filler** star icon appears in your toolbar
+5. Select the cloned folder (the one containing `manifest.json`)
+6. The ⭐ **VIT Feedback Filler** icon will appear in your Chrome toolbar
 
 ---
 
-## How to Use
+## 🎮 How to Use
 
-### Fill a Single Form
-1. Log in to `vtop.vit.ac.in`
-2. Open any feedback form by clicking **Post** on a course
-3. Click the extension icon
-4. Select your star rating and an optional comment
-5. Click **⚡ AUTO-FILL** — review the form — then click **Submit** on VTOP
+### ⚡ Fill a Single Form
 
-### Batch Fill All Courses
-1. Go to the main feedback listing page (where all course rows have a **Post** button)
-2. Click the extension icon — it detects pending forms and shows the count
-3. Select your star rating and optional comment
+1. Log in to [vtop.vit.ac.in](https://vtop.vit.ac.in)
+2. Open any feedback form (click **Post** next to a course)
+3. Click the extension icon in the toolbar
+4. Choose your ⭐ **star rating**
+5. Optionally pick or type a **comment**
+6. Hit **⚡ AUTO-FILL**
+7. Review the filled form, then click **Submit** on VTOP yourself
+
+### 🚀 Batch Fill All Courses
+
+1. Navigate to the main feedback listing page (where every course has a **Post** button)
+2. Click the extension icon — it auto-detects pending forms and shows the count
+3. Select your **star rating** and optional **comment**
 4. Click **🚀 BATCH FILL**
 5. For each course the extension will:
    - Click **Post** and wait for the form to load
-   - Fill all star ratings (and comments if set)
-   - Play a chime 🔔 and show a review overlay
-   - Wait for you to verify and click **"I REVIEWED — SUBMIT NOW"**
-   - Automatically advance to the next course after your submission
+   - Fill all star ratings and comments
+   - Play a 🔔 chime and show a review overlay
+   - Wait for you to click **"I REVIEWED — SUBMIT NOW"**
+   - Automatically move to the next course
 
 ---
 
-## Supported Form Types
+## 📋 Supported Form Types
 
 | Form ID | Type |
 |---|---|
@@ -60,20 +92,63 @@
 
 ---
 
-## ⚠️ Important
+## 🗂️ Project Structure
 
-Feedback submission is **mandatory** for FFCS slot registration.
-Always verify your answers before submitting — incorrect or missing feedback can affect your schedule.
-This extension is a time-saving tool; you are fully responsible for the final Submit.
+```
+feedbackautomation/
+├── manifest.json      # Chrome Extension Manifest V3
+├── content.js         # Injected page script — finds fields, fills ratings, renders overlay
+├── popup.html         # Extension popup — Neobrutalism UI (HTML + CSS)
+├── popup.js           # Popup controller — wires up all buttons and state
+└── icons/
+    ├── icon16.png     # 16 × 16 toolbar icon
+    ├── icon48.png     # 48 × 48 extension management icon
+    └── icon128.png    # 128 × 128 Chrome Web Store icon
+```
 
 ---
 
-## Files
+## 🛠️ Tech Stack
 
-| File | Purpose |
+| Layer | Technology |
 |---|---|
-| `manifest.json` | Chrome extension manifest (v3) |
-| `content.js` | Page script — finds fields, fills ratings, shows overlay |
-| `popup.html` | Extension popup — neobrutalism UI |
-| `popup.js` | Popup controller |
-| `icons/` | 16 × 16, 48 × 48, 128 × 128 PNG icons |
+| Extension Platform | Chrome Extension **Manifest V3** |
+| Permissions | `activeTab`, `scripting`, `storage` |
+| Host Match | `https://*.vit.ac.in/*` |
+| UI | Vanilla HTML/CSS — Neobrutalism design system |
+| Scripting | Vanilla JavaScript (no build step, no dependencies) |
+
+---
+
+## ⚠️ Important Notes
+
+- Feedback submission is **mandatory** for FFCS (Fully Flexible Credit System) slot registration at VIT.
+- Always **review your answers** before clicking Submit — incorrect or missing feedback can impact your timetable.
+- This extension is a **time-saving utility**. You remain fully responsible for every submission you make.
+- This project is **not affiliated with VIT** in any way.
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+
+1. Fork the repository
+2. Create a new branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -m 'feat: add my feature'`
+4. Push to the branch: `git push origin feature/my-feature`
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+Made with ☕ for VIT students who have better things to do.
+
+</div>
