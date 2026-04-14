@@ -1,49 +1,34 @@
-// VIT Feedback Filler — Content Script
-// Fills star ratings and text fields on VTOP feedback pages.
-// Safe Batch Mode: fills forms but NEVER auto-submits.
+// VTOP Feedback Filler — Content Script
+// Applies star ratings and text fields on VTOP feedback pages.
+// Safe Batch Mode: prepares forms but NEVER auto-submits.
 // The user must click Submit themselves for each course.
 
-// ─── Timing / limit constants ────────────────────────────────────────────────
-const FORM_LOAD_SETTLE_MS         = 400;   // wait after stars appear before filling
-const POST_SUBMISSION_DELAY_MS    = 700;   // pause between batch courses
-const SUBMISSION_CHECK_INITIAL_MS = 1500;  // initial delay before polling for submit
-const SUBMISSION_TIMEOUT_MS       = 300000; // 5 minutes max wait for user to submit
-const MAX_BATCH_ROUNDS            = 50;    // upper bound on batch loop iterations
-const SCRIPT_INJECTION_DELAY_MS   = 350;  // delay after injecting content script
+// ─── Constants ───────────────────────────────────────────────────────────────
+const SETTLE_DELAY_MS        = 400;    // wait after stars appear before filling
+const BETWEEN_COURSE_WAIT_MS = 700;    // pause between batch courses
+const SUBMIT_POLL_START_MS   = 1500;   // initial delay before polling for submit
+const SUBMIT_TIMEOUT_MS      = 300000; // 5 minutes max wait for user to submit
+const BATCH_ROUND_LIMIT      = 50;     // upper bound on batch loop iterations
 
+// ─── Message dispatcher ───────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
-  if (msg.action === "fill")   { reply(fillForm(msg.stars, msg.note)); return true; }
-  if (msg.action === "scan")   { reply(inspectPage()); return true; }
-  if (msg.action === "batch")  { runBatch(msg.stars, msg.note, reply); return true; }
+  if (msg.action === "scan")  { reply(analyzePage());                          return true; }
+  if (msg.action === "fill")  { reply(applyRatings(msg.stars, msg.note));      return true; }
+  if (msg.action === "batch") { processBatch(msg.stars, msg.note, reply);      return true; }
   return true;
 });
 
-// ─── Page inspection ────────────────────────────────────────────────────────
+// ─── Form identification ──────────────────────────────────────────────────────
 
-function inspectPage() {
-  const ratingGroups = gatherRatingGroups();
-  const postButtons  = findPendingPostButtons();
-  return {
-    formNames:     identifyForms(),
-    ratingCount:   ratingGroups.length,
-    textareaCount: document.querySelectorAll("textarea").length,
-    hasFeedback:   ratingGroups.length > 0,
-    isListingPage: postButtons.length > 0 && ratingGroups.length === 0,
-    pendingForms:  postButtons.length,
-  };
-}
-
-// ─── Form identification ─────────────────────────────────────────────────────
-
-function identifyForms() {
-  const knownForms = {
+function getFormLabels() {
+  const knownIds = {
     CourseFeedbackPerceptionCurr:    "Curriculum & Syllabus",
     CourseFeedbackPerception:        "Course / Faculty",
     CourseOutcomeFeedbackPerception: "Course Outcome",
     GeneralFeedbackPerception:       "General Feedback",
   };
   const found = [];
-  for (const [id, label] of Object.entries(knownForms)) {
+  for (const [id, label] of Object.entries(knownIds)) {
     if (document.getElementById(id) || document.forms[id]) found.push(label);
   }
   if (!found.length && document.querySelectorAll("fieldset.rating").length > 0) {
@@ -52,48 +37,61 @@ function identifyForms() {
   return found;
 }
 
-// ─── Star rating discovery ───────────────────────────────────────────────────
+// ─── Page analysis ────────────────────────────────────────────────────────────
 
-function gatherRatingGroups() {
-  const byName = new Map();
+function analyzePage() {
+  const ratingInputs = collectRatingInputs();
+  const pendingBtns  = getPendingButtons();
+  return {
+    formNames:     getFormLabels(),
+    ratingCount:   ratingInputs.length,
+    textareaCount: document.querySelectorAll("textarea").length,
+    hasFeedback:   ratingInputs.length > 0,
+    isListingPage: pendingBtns.length > 0 && ratingInputs.length === 0,
+    pendingForms:  pendingBtns.length,
+  };
+}
+
+// ─── Rating input discovery ───────────────────────────────────────────────────
+
+function collectRatingInputs() {
+  const grouped = new Map();
 
   // Strategy 1: fieldset.rating wrappers
   document.querySelectorAll("fieldset.rating").forEach(fieldset => {
     fieldset.querySelectorAll('input[type="radio"]').forEach(radio => {
       if (!radio.name) return;
-      if (!byName.has(radio.name)) byName.set(radio.name, []);
-      byName.get(radio.name).push(radio);
+      if (!grouped.has(radio.name)) grouped.set(radio.name, []);
+      grouped.get(radio.name).push(radio);
     });
   });
 
-  // Strategy 2: any radio with numeric value 1–5
-  if (!byName.size) {
+  // Strategy 2: any radio with a numeric value between 1–5
+  if (!grouped.size) {
     document.querySelectorAll('input[type="radio"]').forEach(radio => {
       const val = parseInt(radio.value, 10);
       if (radio.name && val >= 1 && val <= 5) {
-        if (!byName.has(radio.name)) byName.set(radio.name, []);
-        byName.get(radio.name).push(radio);
+        if (!grouped.has(radio.name)) grouped.set(radio.name, []);
+        grouped.get(radio.name).push(radio);
       }
     });
   }
 
-  return Array.from(byName.entries());
+  return Array.from(grouped.entries());
 }
 
-// ─── Post button discovery ───────────────────────────────────────────────────
+// ─── Button discovery ─────────────────────────────────────────────────────────
 
-function findPendingPostButtons() {
-  const buttons = [];
+function getPendingButtons() {
+  const result = [];
   document.querySelectorAll("button, input[type='button'], a.btn").forEach(el => {
     const label = (el.textContent || el.value || "").trim().toLowerCase();
-    if (label === "post") buttons.push(el);
+    if (label === "post") result.push(el);
   });
-  return buttons;
+  return result;
 }
 
-// ─── Submit button discovery ─────────────────────────────────────────────────
-
-function findSubmitButton() {
+function getSubmitButton() {
   for (const el of document.querySelectorAll("button, input[type='submit'], input[type='button']")) {
     const label = (el.textContent || el.value || "").trim().toLowerCase();
     if (label === "submit") return el;
@@ -101,16 +99,15 @@ function findSubmitButton() {
   return null;
 }
 
-// ─── Form filling ────────────────────────────────────────────────────────────
+// ─── Form filling ─────────────────────────────────────────────────────────────
 
-function fillForm(stars, note) {
-  let starsSet  = 0;
-  let notesSet  = 0;
-  const issues  = [];
+function applyRatings(stars, note) {
+  let starsApplied = 0;
+  let notesApplied = 0;
+  const warnings   = [];
 
   try {
-    // Fill star ratings
-    gatherRatingGroups().forEach(([name, radios]) => {
+    collectRatingInputs().forEach(([name, radios]) => {
       const target = radios.find(r => parseInt(r.value, 10) === stars);
       if (target) {
         radios.forEach(r => (r.checked = false));
@@ -118,44 +115,43 @@ function fillForm(stars, note) {
         ["change", "click", "input"].forEach(type =>
           target.dispatchEvent(new Event(type, { bubbles: true }))
         );
-        starsSet++;
+        starsApplied++;
       } else {
-        issues.push(`Group "${name}": no option for ${stars} stars`);
+        warnings.push(`Group "${name}": no option for ${stars} stars`);
       }
     });
 
     // CSS-only star widget fallback (label click)
-    if (!starsSet) {
+    if (!starsApplied) {
       document.querySelectorAll(`fieldset.rating label[for^="star${stars}_"]`).forEach(lbl => {
         lbl.click();
-        starsSet++;
+        starsApplied++;
       });
     }
 
-    // Fill text areas
+    // Fill text areas when a note is provided
     document.querySelectorAll("form textarea, textarea.form-control").forEach(ta => {
       if (note) {
         ta.value = note;
         ["input", "change"].forEach(type => ta.dispatchEvent(new Event(type, { bubbles: true })));
-        notesSet++;
+        notesApplied++;
       }
     });
 
-    const label = identifyForms().join(" + ") || "Feedback Form";
-    return starsSet > 0
-      ? { ok: true, starsSet, notesSet, label, issues }
-      : { ok: false, starsSet: 0, notesSet: 0, label: "None detected", issues };
+    const label = getFormLabels().join(" + ") || "Feedback Form";
+    return starsApplied > 0
+      ? { ok: true, starsSet: starsApplied, notesSet: notesApplied, label, issues: warnings }
+      : { ok: false, starsSet: 0, notesSet: 0, label: "None detected", issues: warnings };
   } catch (err) {
     return { ok: false, starsSet: 0, notesSet: 0, label: "Error", issues: [err.message] };
   }
 }
 
-// ─── Notification sound (Web Audio) ─────────────────────────────────────────
+// ─── Alert sound (Web Audio) ──────────────────────────────────────────────────
 
-function playChime() {
+function soundAlert() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Three-note ascending chime
     [[440, 0], [550, 0.15], [660, 0.3]].forEach(([freq, delay]) => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -170,18 +166,17 @@ function playChime() {
       osc.stop(ctx.currentTime + delay + 0.4);
     });
   } catch (err) {
-    console.warn("[VFF] Chime playback failed:", err.message);
+    console.warn("[VFF] Sound playback failed:", err.message);
   }
 }
 
-// ─── Review overlay (neobrutalism) ──────────────────────────────────────────
+// ─── Confirm dialog ───────────────────────────────────────────────────────────
 
-function showReviewOverlay(starsSet, notesSet, stars, courseIndex, courseTotal) {
-  removeReviewOverlay();
+function renderConfirmDialog(starsApplied, notesApplied, stars, courseIdx, courseTotal) {
+  destroyConfirmDialog();
 
   const starBar = "★".repeat(stars) + "☆".repeat(5 - stars);
 
-  // Inject keyframe animation
   const styleEl = document.createElement("style");
   styleEl.id = "vff-style";
   styleEl.textContent = `
@@ -218,29 +213,25 @@ function showReviewOverlay(starsSet, notesSet, stars, courseIndex, courseTotal) 
       animation: vffDrop 0.35s ease;
       position: relative;
     ">
-
-      <!-- Course badge -->
       <div style="
         position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
         background: #FFDD00; border: 2px solid #000; box-shadow: 3px 3px 0 #000;
         font-weight: 900; font-size: 11px; padding: 3px 14px;
         white-space: nowrap; letter-spacing: 0.5px;
-      ">COURSE ${courseIndex} / ${courseTotal}</div>
+      ">COURSE ${courseIdx} / ${courseTotal}</div>
 
-      <!-- Title row -->
       <div style="text-align: center; margin-bottom: 18px; margin-top: 6px;">
         <div style="font-size: 36px; line-height: 1;">✅</div>
         <div style="font-size: 20px; font-weight: 900; margin-top: 6px; letter-spacing: -0.5px;">FORM FILLED!</div>
         <div style="font-size: 12px; color: #555; margin-top: 2px;">Review before you submit</div>
       </div>
 
-      <!-- Stats row -->
       <div style="display: flex; gap: 10px; margin-bottom: 18px;">
         <div style="
           flex: 1; border: 2px solid #000; box-shadow: 3px 3px 0 #000;
           background: #FFDD00; padding: 10px 6px; text-align: center;
         ">
-          <div style="font-size: 26px; font-weight: 900;">${starsSet}</div>
+          <div style="font-size: 26px; font-weight: 900;">${starsApplied}</div>
           <div style="font-size: 10px; font-weight: 700; margin-top: 2px;">QUESTIONS<br>FILLED</div>
         </div>
         <div style="
@@ -250,17 +241,16 @@ function showReviewOverlay(starsSet, notesSet, stars, courseIndex, courseTotal) 
           <div style="font-size: 18px; font-weight: 900; letter-spacing: 2px;">${starBar}</div>
           <div style="font-size: 10px; font-weight: 700; margin-top: 2px;">RATING<br>GIVEN</div>
         </div>
-        ${notesSet > 0 ? `
+        ${notesApplied > 0 ? `
         <div style="
           flex: 1; border: 2px solid #000; box-shadow: 3px 3px 0 #000;
           background: #d4f5d4; padding: 10px 6px; text-align: center;
         ">
-          <div style="font-size: 26px; font-weight: 900;">${notesSet}</div>
+          <div style="font-size: 26px; font-weight: 900;">${notesApplied}</div>
           <div style="font-size: 10px; font-weight: 700; margin-top: 2px;">TEXT BOX(ES)<br>FILLED</div>
         </div>` : ""}
       </div>
 
-      <!-- Warning box -->
       <div style="
         border: 2px solid #000; box-shadow: 3px 3px 0 #000;
         background: #fff3cd; padding: 10px 12px; margin-bottom: 16px;
@@ -275,7 +265,6 @@ function showReviewOverlay(starsSet, notesSet, stars, courseIndex, courseTotal) 
         </div>
       </div>
 
-      <!-- Buttons -->
       <div style="display: flex; gap: 10px;">
         <button id="vff-hide" style="
           flex: 1; padding: 10px; border: 2px solid #000; box-shadow: 3px 3px 0 #000;
@@ -311,8 +300,8 @@ function showReviewOverlay(starsSet, notesSet, stars, courseIndex, courseTotal) 
   });
 
   document.getElementById("vff-submit").addEventListener("click", () => {
-    removeReviewOverlay();
-    const submitBtn = findSubmitButton();
+    destroyConfirmDialog();
+    const submitBtn = getSubmitButton();
     if (submitBtn) {
       submitBtn.scrollIntoView({ behavior: "smooth", block: "center" });
       setTimeout(() => submitBtn.click(), 300);
@@ -320,19 +309,19 @@ function showReviewOverlay(starsSet, notesSet, stars, courseIndex, courseTotal) 
   });
 }
 
-function removeReviewOverlay() {
+function destroyConfirmDialog() {
   document.getElementById("vff-overlay")?.remove();
   document.getElementById("vff-style")?.remove();
 }
 
-// ─── Async wait helpers ──────────────────────────────────────────────────────
+// ─── Async wait helpers ───────────────────────────────────────────────────────
 
-function waitForRatings(timeoutMs = 10000) {
+function awaitRatingInputs(timeoutMs = 10000) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const poll = () => {
-      const groups = gatherRatingGroups();
-      if (groups.length > 0) return resolve(groups);
+      const inputs = collectRatingInputs();
+      if (inputs.length > 0) return resolve(inputs);
       if (Date.now() - start > timeoutMs) return reject(new Error("Timed out waiting for ratings"));
       setTimeout(poll, 300);
     };
@@ -340,63 +329,61 @@ function waitForRatings(timeoutMs = 10000) {
   });
 }
 
-// Resolved when the form has been submitted (stars gone, result table present)
-function waitForSubmission(timeoutMs = SUBMISSION_TIMEOUT_MS) {
+function awaitFormSubmission(timeoutMs = SUBMIT_TIMEOUT_MS) {
   return new Promise(resolve => {
     const start = Date.now();
     const poll = () => {
-      const stillHasRatings = gatherRatingGroups().length > 0;
+      const stillHasRatings = collectRatingInputs().length > 0;
       const hasResultTable  = !!document.querySelector("table");
       if (!stillHasRatings && hasResultTable) return resolve("submitted");
       if (Date.now() - start > timeoutMs) return resolve("timeout");
       setTimeout(poll, 500);
     };
-    setTimeout(poll, SUBMISSION_CHECK_INITIAL_MS);
+    setTimeout(poll, SUBMIT_POLL_START_MS);
   });
 }
 
-// ─── Batch mode ──────────────────────────────────────────────────────────────
+// ─── Batch processor ──────────────────────────────────────────────────────────
 
-async function runBatch(stars, note, reply) {
+async function processBatch(stars, note, reply) {
   let submitted = 0;
   let skipped   = 0;
 
   try {
-    const initialCount = findPendingPostButtons().length;
+    const initialCount = getPendingButtons().length;
     let courseIndex = 0;
 
-    for (let round = 0; round < MAX_BATCH_ROUNDS; round++) {
-      const pending = findPendingPostButtons();
+    for (let round = 0; round < BATCH_ROUND_LIMIT; round++) {
+      const pending = getPendingButtons();
       if (!pending.length) break;
 
       courseIndex++;
       pending[0].click();
 
-      // Wait for ratings to load
       try {
-        await waitForRatings(10000);
+        await awaitRatingInputs(10000);
       } catch (err) {
         console.warn("[VFF] Ratings not found after timeout:", err.message);
         await new Promise(r => setTimeout(r, 2000));
-        if (!gatherRatingGroups().length) { skipped++; continue; }
+        if (!collectRatingInputs().length) { skipped++; continue; }
       }
 
-      await new Promise(r => setTimeout(r, FORM_LOAD_SETTLE_MS));
+      await new Promise(r => setTimeout(r, SETTLE_DELAY_MS));
 
-      const result = fillForm(stars, note);
+      const result = applyRatings(stars, note);
       if (!result.ok) { skipped++; continue; }
 
-      playChime();
-      showReviewOverlay(result.starsSet, result.notesSet, stars, courseIndex, initialCount);
+      soundAlert();
+      renderConfirmDialog(result.starsSet, result.notesSet, stars, courseIndex, initialCount);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      const outcome = await waitForSubmission(SUBMISSION_TIMEOUT_MS);
-      removeReviewOverlay();
+      const outcome = await awaitFormSubmission(SUBMIT_TIMEOUT_MS);
+      destroyConfirmDialog();
 
       if (outcome === "timeout") skipped++;
       else submitted++;
 
-      await new Promise(r => setTimeout(r, POST_SUBMISSION_DELAY_MS));
+      await new Promise(r => setTimeout(r, BETWEEN_COURSE_WAIT_MS));
     }
 
     const msg = submitted > 0
@@ -405,7 +392,8 @@ async function runBatch(stars, note, reply) {
 
     reply({ ok: true, submitted, skipped, msg });
   } catch (err) {
-    removeReviewOverlay();
+    destroyConfirmDialog();
     reply({ ok: false, submitted, skipped, msg: `Error: ${err.message}` });
   }
 }
+
