@@ -193,6 +193,9 @@
     }
     .run-btn.primary { background: var(--accent); }
     .run-btn.go-btn  { background: var(--ok); color: var(--bg-card); }
+    .run-btn.snorlax { width: 100%; background: #3D7A8A; color: var(--bg-card); }
+    .run-btn.snorlax.primary { background: #2A5C69; }
+    .btn-hint { display: block; font-size: 9px; font-weight: 700; margin-top: 2px; letter-spacing: 0; opacity: 0.85; }
 
     /* ── Busy bar ───────────────────────────────────────── */
     .busy-bar {
@@ -269,7 +272,7 @@
     <div class="brand-icon">⭐</div>
     <div class="brand-text">
       <div class="brand-title">VTOP FEEDBACK FILLER</div>
-      <div class="brand-sub">End-Semester · Never Auto-Submits</div>
+      <div class="brand-sub">End-Semester · 3 Modes</div>
     </div>
     <button class="rescan-btn" id="scanBtn" title="Re-scan page">↺ SCAN</button>
   </header>
@@ -327,6 +330,10 @@
       <button class="run-btn primary" id="fillBtn">⚡ AUTO-FILL</button>
       <button class="run-btn" id="batchBtn">🚀 BATCH FILL</button>
     </div>
+    <button class="run-btn snorlax" id="snorlaxBtn">
+      😴 SNORLAX
+      <span class="btn-hint">Fill + submit everything in one go — no stops</span>
+    </button>
 
     <!-- Busy indicator -->
     <div class="busy-bar" id="loader">
@@ -359,7 +366,7 @@
 
   <!-- Footer -->
   <footer class="foot-note">
-    YOU CONTROL THE FINAL SUBMIT · FEEDBACK AFFECTS FFCS REGISTRATION
+    SNORLAX SUBMITS FOR YOU · FEEDBACK AFFECTS FFCS REGISTRATION
   </footer>
 
   <script src="popup.js"></script>

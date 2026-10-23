@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "VIT Feedback Filler",
   "version": "1.0",
-  "description": "Automatically fills VIT VTOP end-semester feedback star ratings with safe batch mode. You always control the final submit.",
+  "description": "Automatically fills VIT VTOP end-semester feedback star ratings — single, batch, or Snorlax mode (fill + submit everything in one go).",
   "permissions": [
     "activeTab",
     "scripting",

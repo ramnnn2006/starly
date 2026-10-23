@@ -1,7 +1,7 @@
 // VTOP Feedback Filler — Content Script
 // Applies star ratings and text fields on VTOP feedback pages.
-// Safe Batch Mode: prepares forms but NEVER auto-submits.
-// The user must click Submit themselves for each course.
+// Safe Batch Mode: prepares forms and waits for the user to click Submit.
+// Snorlax Mode: fills, submits and moves on without stopping.
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const SETTLE_DELAY_MS        = 400;    // wait after stars appear before filling
@@ -9,12 +9,14 @@ const BETWEEN_COURSE_WAIT_MS = 700;    // pause between batch courses
 const SUBMIT_POLL_START_MS   = 1500;   // initial delay before polling for submit
 const SUBMIT_TIMEOUT_MS      = 300000; // 5 minutes max wait for user to submit
 const BATCH_ROUND_LIMIT      = 50;     // upper bound on batch loop iterations
+const AUTO_SUBMIT_DELAY_MS   = 600;    // pause after filling before auto-submitting
+const AUTO_SUBMIT_TIMEOUT_MS = 20000;  // wait for auto-submit before falling back to manual
 
 // ─── Message dispatcher ───────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.action === "scan")  { reply(analyzePage());                          return true; }
-  if (msg.action === "fill")  { reply(applyRatings(msg.stars, msg.note));      return true; }
-  if (msg.action === "batch") { processBatch(msg.stars, msg.note, reply);      return true; }
+  if (msg.action === "fill")  { fillSingle(msg.stars, msg.note, msg.autoSubmit, reply);   return true; }
+  if (msg.action === "batch") { processBatch(msg.stars, msg.note, msg.autoSubmit, reply); return true; }
   return true;
 });
 
@@ -145,6 +147,26 @@ function applyRatings(stars, note) {
   } catch (err) {
     return { ok: false, starsSet: 0, notesSet: 0, label: "Error", issues: [err.message] };
   }
+}
+
+// ─── Submitting ───────────────────────────────────────────────────────────────
+
+function clickSubmit() {
+  const submitBtn = getSubmitButton();
+  if (!submitBtn) return false;
+  submitBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+  setTimeout(() => submitBtn.click(), 300);
+  return true;
+}
+
+async function fillSingle(stars, note, autoSubmit, reply) {
+  const result = applyRatings(stars, note);
+  result.submitted = false;
+  if (result.ok && autoSubmit) {
+    await new Promise(r => setTimeout(r, AUTO_SUBMIT_DELAY_MS));
+    result.submitted = clickSubmit();
+  }
+  reply(result);
 }
 
 // ─── Alert sound (Web Audio) ──────────────────────────────────────────────────
@@ -301,11 +323,7 @@ function renderConfirmDialog(starsApplied, notesApplied, stars, courseIdx, cours
 
   document.getElementById("vff-submit").addEventListener("click", () => {
     destroyConfirmDialog();
-    const submitBtn = getSubmitButton();
-    if (submitBtn) {
-      submitBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => submitBtn.click(), 300);
-    }
+    clickSubmit();
   });
 }
 
@@ -345,7 +363,7 @@ function awaitFormSubmission(timeoutMs = SUBMIT_TIMEOUT_MS) {
 
 // ─── Batch processor ──────────────────────────────────────────────────────────
 
-async function processBatch(stars, note, reply) {
+async function processBatch(stars, note, autoSubmit, reply) {
   let submitted = 0;
   let skipped   = 0;
 
@@ -373,12 +391,20 @@ async function processBatch(stars, note, reply) {
       const result = applyRatings(stars, note);
       if (!result.ok) { skipped++; continue; }
 
-      soundAlert();
-      renderConfirmDialog(result.starsSet, result.notesSet, stars, courseIndex, initialCount);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      let outcome = "timeout";
+      if (autoSubmit) {
+        await new Promise(r => setTimeout(r, AUTO_SUBMIT_DELAY_MS));
+        if (clickSubmit()) outcome = await awaitFormSubmission(AUTO_SUBMIT_TIMEOUT_MS);
+      }
 
-      const outcome = await awaitFormSubmission(SUBMIT_TIMEOUT_MS);
-      destroyConfirmDialog();
+      // Manual review (or fallback when auto-submit didn't go through)
+      if (outcome === "timeout") {
+        soundAlert();
+        renderConfirmDialog(result.starsSet, result.notesSet, stars, courseIndex, initialCount);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        outcome = await awaitFormSubmission(SUBMIT_TIMEOUT_MS);
+        destroyConfirmDialog();
+      }
 
       if (outcome === "timeout") skipped++;
       else submitted++;
@@ -390,6 +416,7 @@ async function processBatch(stars, note, reply) {
       ? `Done! ${submitted} form(s) submitted.${skipped ? ` ${skipped} skipped/timed out.` : ""}`
       : "No forms submitted. Check that you are on the VTOP feedback listing page.";
 
+    if (autoSubmit) soundAlert();
     reply({ ok: true, submitted, skipped, msg });
   } catch (err) {
     destroyConfirmDialog();

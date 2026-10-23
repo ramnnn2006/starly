@@ -16,9 +16,13 @@
 
 ## 🧠 What is this?
 
-**VIT Feedback Filler** is a Chrome extension for VIT students that automatically fills VTOP end-semester feedback forms with your chosen star rating and optional comment — one course at a time or all at once via Batch Mode.
+**VIT Feedback Filler** is a Chrome extension for VIT students that automatically fills VTOP end-semester feedback forms with your chosen star rating and optional comment. It has three modes:
 
-> 🔒 **You always click Submit yourself. The extension never submits on your behalf.**
+| Mode | What it does | Who clicks Submit |
+|---|---|---|
+| ⚡ **Auto-Fill** | Fills the form that's open right now | You |
+| 🚀 **Batch Fill** | Goes through every pending course, pauses on each for review | You (via the overlay) |
+| 😴 **Snorlax** | Goes through every pending course, fills **and submits** each one — no stops | The extension |
 
 Built with a clean [Neobrutalism](https://hype4.academy/articles/design/neubrutalism-is-taking-over-web) UI — bold borders, high contrast, zero fluff.
 
@@ -31,8 +35,8 @@ Built with a clean [Neobrutalism](https://hype4.academy/articles/design/neubruta
 | ⭐ **Star Fill** | Choose 1–5 stars and instantly fill every rating question on the page |
 | 💬 **Comment Presets** | Pick Good / Excellent / Very Good / Satisfactory or write a fully custom comment |
 | 🚀 **Safe Batch Mode** | Auto-navigates each pending course, fills the form, plays a chime, then pauses for your manual Submit |
+| 😴 **Snorlax Mode** | Fill + submit every pending course in one go; chimes when finished, falls back to the review overlay if a submit doesn't go through |
 | 🔔 **Chime + Overlay** | Audio cue and review overlay appear before every submission so you never miss a step |
-| 🔒 **Zero Auto-Submit** | Submission is always in your hands — the extension will never click Submit |
 | 📊 **Live Stats** | Popup shows question count, current rating, and pending course count in real time |
 | 🎨 **Neobrutalism UI** | Bold, high-contrast, monospace design — looks great, works better |
 
@@ -78,6 +82,18 @@ Built with a clean [Neobrutalism](https://hype4.academy/articles/design/neubruta
    - Play a 🔔 chime and show a review overlay
    - Wait for you to click **"I REVIEWED — SUBMIT NOW"**
    - Automatically move to the next course
+
+---
+
+### 😴 Snorlax Mode (fill + submit, no stops)
+
+1. Go to the feedback listing page (or open a single form)
+2. Pick your **star rating** and optional **comment**
+3. Click **😴 SNORLAX**
+4. Every pending course is filled and submitted automatically — a chime plays when it's all done
+5. If a submit doesn't go through within 20 seconds, the review overlay appears for that course so you can finish it manually
+
+> ⚠️ Snorlax submits without asking. Double-check your rating and comment **before** you click it.
 
 ---
 

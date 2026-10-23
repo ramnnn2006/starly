@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const msgText    = document.getElementById("statusText");
   const fillBtn    = document.getElementById("fillBtn");
   const batchBtn   = document.getElementById("batchBtn");
+  const snorlaxBtn = document.getElementById("snorlaxBtn");
   const scanBtn    = document.getElementById("scanBtn");
 
   const ratingToggle  = document.getElementById("ratingHead");
@@ -103,19 +104,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ── Button handlers ───────────────────────────────────────────────────────
-  fillBtn.addEventListener("click",  doFill);
-  batchBtn.addEventListener("click", doBatch);
+  fillBtn.addEventListener("click",  () => doFill(false));
+  batchBtn.addEventListener("click", () => doBatch(false));
+  snorlaxBtn.addEventListener("click", doSnorlax);
   scanBtn.addEventListener("click",  runPageScan);
 
   // ── Single-form fill ──────────────────────────────────────────────────────
-  async function doFill() {
-    setBusy(true, "Filling form…");
+  async function doFill(autoSubmit = false) {
+    setBusy(true, autoSubmit ? "Filling + submitting…" : "Filling form…");
     clearMessage();
 
     const tab = await getActiveTab();
     if (!tab) { setBusy(false); showMessage("err", "❌ No active tab found."); return; }
 
-    const res = await dispatchMsg(tab.id, { action: "fill", stars: currentRating, note: currentComment });
+    const res = await dispatchMsg(tab.id, { action: "fill", stars: currentRating, note: currentComment, autoSubmit });
     setBusy(false);
 
     if (!res) {
@@ -128,7 +130,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       rStat.textContent = `${currentRating}★`;
       showMessage("ok",
         `✅ Filled ${res.starsSet} question(s) with ${currentRating} stars` +
-        (res.notesSet > 0 ? `\n📝 Comment added to ${res.notesSet} text box(es)` : "")
+        (res.notesSet > 0 ? `\n📝 Comment added to ${res.notesSet} text box(es)` : "") +
+        (res.submitted ? "\n😴 Submitted automatically" : "") +
+        (autoSubmit && !res.submitted ? "\n⚠️ Submit button not found — submit manually" : "")
       );
       setStrip("green", `${res.starsSet} question(s) filled — ${res.label}`);
     } else {
@@ -137,7 +141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ── Batch fill ────────────────────────────────────────────────────────────
-  async function doBatch() {
+  async function doBatch(autoSubmit) {
     setBusy(true, "Scanning for pending forms…");
     clearMessage();
 
@@ -156,11 +160,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    chrome.tabs.sendMessage(tab.id, { action: "batch", stars: currentRating, note: currentComment });
+    chrome.tabs.sendMessage(tab.id, { action: "batch", stars: currentRating, note: currentComment, autoSubmit });
 
     setBusy(false);
     pStat.textContent = total;
-    setStrip("blue", `Batch running — ${total} course(s) queued`);
+    setStrip("blue", `${autoSubmit ? "Snorlax" : "Batch"} running — ${total} course(s) queued`);
+
+    if (autoSubmit) {
+      showMessage("warn",
+        `😴 Snorlax started for ${total} course(s).\n\n` +
+        `Every form is filled and submitted automatically —\n` +
+        `no stops. A chime plays when it's all done.\n\n` +
+        `If a submit doesn't go through, the review overlay\n` +
+        `appears for that course so you can finish it.`
+      );
+      return;
+    }
+
     showMessage("warn",
       `🚀 Batch started for ${total} course(s).\n\n` +
       `After each form is filled:\n` +
@@ -169,6 +185,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       `  ✅ Click "I REVIEWED — SUBMIT NOW"\n\n` +
       `The extension then moves to the next course automatically.`
     );
+  }
+
+  // ── Snorlax: fill + submit with no stops ──────────────────────────────────
+  // Listing page → batch with auto-submit; open form → fill + submit it.
+  async function doSnorlax() {
+    const tab  = await getActiveTab();
+    const info = tab ? await dispatchMsg(tab.id, { action: "scan" }, 5000) : null;
+    if (info?.hasFeedback && !info.isListingPage) return doFill(true);
+    return doBatch(true);
   }
 
   // ── Page scan ─────────────────────────────────────────────────────────────
@@ -266,6 +291,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     busyLabel.textContent = text;
     fillBtn.disabled      = on;
     batchBtn.disabled     = on;
+    snorlaxBtn.disabled   = on;
     scanBtn.disabled      = on;
   }
 
